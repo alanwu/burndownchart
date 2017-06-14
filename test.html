@@ -29,14 +29,16 @@
           var endDate = new Date(2017, 5, 20);
           var committedHours = 254.5;
           var devCapacity = [5, 0, 5, 2.5, 5, 5, 5, 5, 0, 0, 0, 0, 0];
+          var devException = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,];
           var qaCapacity = [0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 5, 0, 0];
+          var qaException = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,];
           var numOfDev = 6;
           var numOfQa = 2;
 
           var ctx = document.getElementById("myChart").getContext('2d');
           var type = "line";
           var labels = getLabels(beginDate, endDate);
-          var baseLine = getBaseLine(beginDate, endDate, devCapacity, qaCapacity, committedHours, numOfDev, numOfQa);
+          var baseLine = getBaseLine(beginDate, endDate, devCapacity, devException, qaCapacity, qaException, committedHours, numOfDev, numOfQa);
           var burnDown = getBurndown();
 
           var data = {
@@ -117,9 +119,11 @@
             return labels;
           }
 
-          function getBaseLine(beginDate, endDate, devCapacity, qaCapacity, committedHours, numOfDev, numOfQa) {
+          function getBaseLine(beginDate, endDate, devCapacity, devException, qaCapacity, qaException, committedHours, numOfDev, numOfQa) {
             var numOfSprintDays = 0;
             var pivotDate = beginDate;
+            var hoursRemaining = committedHours;
+
             // calculate the total number of working sprint days
             while (pivotDate <= endDate) {
               if (pivotDate.getDay() != 0 && pivotDate.getDay() != 6) {
@@ -133,22 +137,42 @@
               alert("The number of sprint days " + numOfSprintDays + " doesn't match dev days " + devCapacity.length);
               return null;
             }
+            if (numOfSprintDays != devException.length) {
+              alert("The number of sprint days " + numOfSprintDays + " doesn't match dev exception days " + devException.length);
+              return null;
+            }
             if (numOfSprintDays != qaCapacity.length) {
               alert("The number of sprint days " + numOfSprintDays + " doesn't match qa days " + qaCapacity.length);
+              return null;
+            }
+            if (numOfSprintDays != qaException.length) {
+              alert("The number of sprint days " + numOfSprintDays + " doesn't match qa exception days " + qaException.length);
               return null;
             }
 
             // generate the baseline
             var baseLine = [];
-            baseLine.push(committedHours);
+            baseLine.push(hoursRemaining);
 
-            while (committedHours > 0) {
+            while (hoursRemaining > 0) {
               // substract the capacity from the committed hours on each day
-              committedHours = committedHours - devCapacity[devCapacity.length - numOfSprintDays] * numOfDev - qaCapacity[qaCapacity.length - numOfSprintDays] * numOfQa;
-              if (committedHours < 0) {
-                committedHours = 0;
+              var sprintDay = devCapacity.length - numOfSprintDays;
+              var devHours = devCapacity[sprintDay] * numOfDev;
+              var devExceptionHours = devException[devCapacity.length - numOfSprintDays];
+              if (devHours == 0 && devExceptionHours != 0) {
+                alert("There is no dev capacity on sprint day " + sprintDay + " but with dev exceptions");
               }
-              baseLine.push(committedHours);
+              var qaHours = qaCapacity[qaCapacity.length - numOfSprintDays] * numOfQa;
+              var qaExceptionHours = qaException[devCapacity.length - numOfSprintDays];
+              if (qaHours == 0 && qaExceptionHours != 0) {
+                alert("There is no qa capacity on sprint day " + sprintDay + " but with qa exceptions");
+              }
+
+              hoursRemaining = hoursRemaining - devHours + devExceptionHours - qaHours + qaExceptionHours;
+              if (hoursRemaining < 0) {
+                hoursRemaining = 0;
+              }
+              baseLine.push(hoursRemaining);
               numOfSprintDays--;
             }
 
