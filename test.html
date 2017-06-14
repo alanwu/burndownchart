@@ -37,6 +37,7 @@
           var type = "line";
           var labels = getLabels(beginDate, endDate);
           var baseLine = getBaseLine(beginDate, endDate, devCapacity, qaCapacity, committedHours, numOfDev, numOfQa);
+          var burnDown = getBurndown();
 
           var data = {
                   labels: labels,
@@ -44,7 +45,7 @@
                       label: "Burndown",
                       xAxixID: 'Days',
                       //yAxisID: 'Hours',
-                      data: [12, 19, 3, 5, 2, 3],
+                      data: burnDown,
                       borderColor: 'rgba(255,99,132,1)',
                       borderWidth: 2,
                       lineTension: 0,
@@ -75,13 +76,6 @@
                     intersect: true
                   },
                   scales: {
-                      xAxes: [{
-                        display: true,
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Dates'
-                        }
-                      }],
                       yAxes: [{
                         display: true,
                         scaleLabel: {
@@ -126,6 +120,7 @@
           function getBaseLine(beginDate, endDate, devCapacity, qaCapacity, committedHours, numOfDev, numOfQa) {
             var numOfSprintDays = 0;
             var pivotDate = beginDate;
+            // calculate the total number of working sprint days
             while (pivotDate <= endDate) {
               if (pivotDate.getDay() != 0 && pivotDate.getDay() != 6) {
                 numOfSprintDays++;
@@ -133,6 +128,7 @@
               pivotDate.setDate(pivotDate.getDate() + 1);
             }
 
+            // validate the number of sprint days against the capacity days
             if (numOfSprintDays != devCapacity.length) {
               alert("The number of sprint days " + numOfSprintDays + " doesn't match dev days " + devCapacity.length);
               return null;
@@ -141,10 +137,13 @@
               alert("The number of sprint days " + numOfSprintDays + " doesn't match qa days " + qaCapacity.length);
               return null;
             }
+
+            // generate the baseline
             var baseLine = [];
             baseLine.push(committedHours);
 
             while (committedHours > 0) {
+              // substract the capacity from the committed hours on each day
               committedHours = committedHours - devCapacity[devCapacity.length - numOfSprintDays] * numOfDev - qaCapacity[qaCapacity.length - numOfSprintDays] * numOfQa;
               if (committedHours < 0) {
                 committedHours = 0;
@@ -154,6 +153,10 @@
             }
 
             return baseLine;
+          }
+
+          function getBurndown() {
+            return [254.5, 210, 210, 184.25, 156.5, 129, 108.83, 78.79, 45.58, 36.5];
           }
           </script>
         </div>
