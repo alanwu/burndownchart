@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Bootstrap 101 Template</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.bundle.min.js"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-lg-8">
+          <canvas id="myChart" width="400" height="200"></canvas>
+          <script>
+          var beginDate = new Date(2017, 5, 2);
+          var endDate = new Date(2017, 5, 20);
+          var committedHours = 254.5;
+          var devCapacity = [5, 0, 5, 2.5, 5, 5, 5, 5, 0, 0, 0, 0, 0];
+          var qaCapacity = [0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 5, 0, 0];
+          var numOfDev = 6;
+          var numOfQa = 2;
+
+          var ctx = document.getElementById("myChart").getContext('2d');
+          var type = "line";
+          var labels = getLabels(beginDate, endDate);
+          var baseLine = getBaseLine(beginDate, endDate, devCapacity, qaCapacity, committedHours, numOfDev, numOfQa);
+
+          var data = {
+                  labels: labels,
+                  datasets: [{
+                      label: "Burndown",
+                      xAxixID: 'Days',
+                      //yAxisID: 'Hours',
+                      data: [12, 19, 3, 5, 2, 3],
+                      borderColor: 'rgba(255,99,132,1)',
+                      borderWidth: 2,
+                      lineTension: 0,
+                      fill: false
+                  }, {
+                      label: "Base line",
+                      xAxixID: "Days",
+                      //yAxisID: 'Hours',
+                      data: baseLine,
+                      borderColor: 'rgba(54, 162, 235, 1)',
+                      borderWidth: 2,
+                      lineTension: 0,
+                      fill: false
+                    }]
+          };
+
+          var options = {
+                  title:{
+                    display:true,
+                    text:'Burndown'
+                  },
+                  tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                  },
+                  hover: {
+                    mode: 'nearest',
+                    intersect: true
+                  },
+                  scales: {
+                      xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Dates'
+                        }
+                      }],
+                      yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Hours'
+                        },
+                        ticks: {
+                            beginAtZero: true
+                        }
+                      }]
+                  }
+          };
+
+          var myChart = new Chart(ctx, {
+              type: type,
+              data: data,
+              options: options
+          });
+
+          function getLabels(beginDate, endDate) {
+            var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            var dayNames = ["S", "M", "T", "W", "R", "F"];
+            var labels = [];
+            var pivotDate = new Date(beginDate.getTime());
+
+            while(pivotDate <= endDate) {
+              var date = pivotDate.getDate();
+              var month = monthNames[pivotDate.getMonth()];
+              dayNumber = pivotDate.getDay();
+              if (dayNumber == 0 || dayNumber > 5){
+                pivotDate.setDate(pivotDate.getDate() + 1);
+                continue;
+              }
+              var day = dayNames[dayNumber];
+              label = day + " " + month + " " + date;
+              labels.push(label);
+              pivotDate.setDate(pivotDate.getDate() + 1);
+            }
+            return labels;
+          }
+
+          function getBaseLine(beginDate, endDate, devCapacity, qaCapacity, committedHours, numOfDev, numOfQa) {
+            var numOfSprintDays = 0;
+            var pivotDate = beginDate;
+            while (pivotDate <= endDate) {
+              if (pivotDate.getDay() != 0 && pivotDate.getDay() != 6) {
+                numOfSprintDays++;
+              }
+              pivotDate.setDate(pivotDate.getDate() + 1);
+            }
+
+            if (numOfSprintDays != devCapacity.length) {
+              alert("The number of sprint days " + numOfSprintDays + " doesn't match dev days " + devCapacity.length);
+              return null;
+            }
+            if (numOfSprintDays != qaCapacity.length) {
+              alert("The number of sprint days " + numOfSprintDays + " doesn't match qa days " + qaCapacity.length);
+              return null;
+            }
+            var baseLine = [];
+            baseLine.push(committedHours);
+
+            while (committedHours > 0) {
+              committedHours = committedHours - devCapacity[devCapacity.length - numOfSprintDays] * numOfDev - qaCapacity[qaCapacity.length - numOfSprintDays] * numOfQa;
+              if (committedHours < 0) {
+                committedHours = 0;
+              }
+              baseLine.push(committedHours);
+              numOfSprintDays--;
+            }
+
+            return baseLine;
+          }
+          </script>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  </body>
+</html>
